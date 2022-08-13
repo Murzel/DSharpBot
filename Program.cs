@@ -1,17 +1,41 @@
 ﻿using DSharpBot.Commands;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using System.Text.Json;
 
 namespace DSharpBot
 {
-    class Program
+	static class Program
     {
         public static DateTimeOffset CreatedAt { get; } = DateTimeOffset.Now;
         public static ulong MyMemberId { get; } = 219828093072834561;
 
-        static void Main(string[] args)
+        public static Config Config { get; set; } = ((Func<Config>)(() => {
+            Config res;
+            string configPath = "Config.json";
+            string configJson;
+
+            if (File.Exists(configPath))
+                configJson = File.ReadAllText(configPath);
+            else
+                throw new Exception($"Configuration file \"{configPath}\" in \"{Directory.GetCurrentDirectory()}\" not found!");
+
+            try
+			{
+                res = JsonSerializer.Deserialize<Config>(configJson)  ?? throw new Exception("Failed to process configuration file");
+            }
+            catch (Exception ex)
+			{
+				throw new("Failed to process configuration file");
+            }
+            
+            return res;
+        }))();
+
+		static void Main(string[] args)
         {
             _ = CreatedAt;
+
             CreateHost().GetAwaiter().GetResult();
         }
 
@@ -19,7 +43,7 @@ namespace DSharpBot
         {
             var discord = new DiscordClient(new DiscordConfiguration()
             {
-                Token = "<Your Token Here>",
+                Token = Config.DiscordBotToken,
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.All
             });
