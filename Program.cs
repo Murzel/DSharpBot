@@ -19,7 +19,7 @@ namespace DSharpBot
         {
             var discord = new DiscordClient(new DiscordConfiguration()
             {
-                Token = "NzcyNjA3NTYzODMzMjc4NDY2.G90sMW.h7ggShcEwqx76eD9UUzHITBj1bIbM5wClZI4j8",
+                Token = "<Your Token Here>",
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.All
             });
