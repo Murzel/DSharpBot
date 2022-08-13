@@ -12,8 +12,10 @@
 	</ItemGroup>
 
 	<Target Name="PostBuild" AfterTargets="Build">
-		<Message Text="Starting to export configuration file"/>
+		<Message Text="Starting to export configuration file" />
 		<Copy SourceFiles="Config.json" DestinationFolder="$(OutputPath)" ContinueOnError="false" />
 		<Message Text="Configuration file was exported successfully" />
 	</Target>
+
+	<ProjectExtensions><VisualStudio><UserProperties config_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 </Project>
