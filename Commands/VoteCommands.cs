@@ -47,6 +47,13 @@ public class VoteCommands : BaseCommandModule
 			await ctx.RespondAsync($"Du hast überlebt {PauseChamp}...");
 	}
 
+	[Command("tuhh")]
+	public async Task TuhhCommand(CommandContext ctx)
+	{
+		var weirdChamp = ctx.Guild.GetEmojiByName("weirdChamp");
+		await ctx.RespondAsync($"Tuhh ist Schmutz {weirdChamp}");
+	}
+
 	[Command("random")]
 	[Aliases("rand")]
 	public async Task RandomCommand(CommandContext ctx, params string[] liste)
