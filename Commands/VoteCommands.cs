@@ -17,7 +17,7 @@ public class VoteCommands : BaseCommandModule
 		await ctx.Channel.SendMessageAsync($"\"Du hast mein ganzen Abend ruiniert! Wenn *du* nicht mein Premade wärst, würde ich **dich** reporten {weirdChamp}\" ~Jonas 2021");
 	}
 
-	[Command("ruined")]
+	[Command("ruined"), Description("Do a statement and make clear the fucker ruined your day")]
 	public async Task RuinedCommand(CommandContext ctx, DiscordMember member)
 	{
 		if (member.Id == Program.Config.Bot.Id)
@@ -33,7 +33,7 @@ public class VoteCommands : BaseCommandModule
 		await ctx.Channel.SendMessageAsync($"{Italic("Du")} hast mein ganzen Abend ruiniert {Bold(Sanitize(member.Nickname))} {peepoWtf}\n\nWenn {Italic("du")} nicht mein Premade wärst, würde ich {Bold("dich")} reporten {weirdChamp}");
 	}
 
-	[Command("rr")]
+	[Command("rr"), Description("Russian Roulette. Test your luck :)")]
 	public async Task RrCommand(CommandContext ctx)
 	{
 		var rand = Random.Shared.Next(1, 100);
@@ -47,14 +47,14 @@ public class VoteCommands : BaseCommandModule
 			await ctx.RespondAsync($"Du hast überlebt {PauseChamp}...");
 	}
 
-	[Command("tuhh")]
+	[Command("tuhh"), Description("The truth hurts sometimes...")]
 	public async Task TuhhCommand(CommandContext ctx)
 	{
 		var weirdChamp = ctx.Guild.GetEmojiByName("weirdChamp");
 		await ctx.RespondAsync($"Tuhh ist Schmutz {weirdChamp}");
 	}
 
-	[Command("random")]
+	[Command("random"), Description("Get a random item chosen of the list")] 
 	[Aliases("rand")]
 	public async Task RandomCommand(CommandContext ctx, params string[] liste)
 	{
@@ -75,7 +75,7 @@ public class VoteCommands : BaseCommandModule
 				liste = new string[] { liste[i] };
 				break;
 			}
-			else if (new Regex(@"^-?[0-9]{1,9}?-?-?[0-9]{1,9}$").IsMatch(liste[i]))
+			else if (new Regex(@"^-?[0-9]{1,9}?--?[0-9]{1,9}$").IsMatch(liste[i]))
 			{
 				// If two numbers seperated by a dash, get a random number between those.
 				// A number can have at max 9 digits, so it can be parsed as an integer val.
@@ -117,15 +117,15 @@ public class VoteCommands : BaseCommandModule
 		await member.TimeoutAsync(DateTimeOffset.Now.AddSeconds(time), "KEKWait");
 	}
 
-	[Command("ping")]
+	[Command("ping"), Description("Check out how long the bot needs to responds")]
 	public async Task PingCommand(CommandContext ctx)
 	{
-		await ctx.RespondAsync($"Bot is running since: {Bold(Program.CreatedAt.ToString())}");
+		await ctx.RespondAsync($"Message received and replied at {Bold(DateTimeOffset.Now.ToString())}");
 	}
 
-	[Command("uptime")]
+	[Command("uptime"), Description("Check out how long the bot is running.")]
 	public async Task UptimeCommand(CommandContext ctx)
 	{
-		await ctx.RespondAsync($"Uptime: {Bold((DateTimeOffset.Now - Program.CreatedAt).ToFormattedRelativeTime())}");
+		await ctx.RespondAsync($"Since: {Bold(Program.CreatedAt.ToString())}\nUptime: {Bold((DateTimeOffset.Now - Program.CreatedAt).ToFormattedRelativeTime())}");
 	}
 }
