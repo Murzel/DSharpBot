@@ -54,14 +54,14 @@ public class VoteCommands : BaseCommandModule
 		await ctx.RespondAsync($"Tuhh ist Schmutz {weirdChamp}");
 	}
 
-	[Command("random"), Description("Get a random item chosen of the list")] 
+	[Command("random"), Description("Get a random item chosen of the list")]
 	[Aliases("rand")]
 	public async Task RandomCommand(CommandContext ctx, params string[] liste)
 	{
 		if (!liste.Any())
 		{
 			var weirdChamp = ctx.Guild.GetEmojiByName("weirdChamp");
-			
+
 			await ctx.RespondAsync($"Du musst schon Elemente angeben, damit ich ein zufälliges davon bestimmen kann {Bold("du")} Pappnase {weirdChamp}");
 			return;
 		}
@@ -127,5 +127,171 @@ public class VoteCommands : BaseCommandModule
 	public async Task UptimeCommand(CommandContext ctx)
 	{
 		await ctx.RespondAsync($"Since: {Bold(Program.CreatedAt.ToString())}\nUptime: {Bold((DateTimeOffset.Now - Program.CreatedAt).ToFormattedRelativeTime())}");
+	}
+
+	[Command("spam")]
+	public async Task SpamCommand(CommandContext ctx, DiscordMember member)
+	{
+		await SpamCommand(ctx, member, 5);
+	}
+
+	[Command("spam")]
+	public async Task SpamCommand(CommandContext ctx, DiscordMember member, int count)
+	{
+		if (count > 10)
+		{
+			await ctx.RespondAsync($"Du brauchst Lord Plus, um mehr als 10 mal zu spammen.");
+			return;
+		}
+
+		for (int i = 0; i < count; i++)
+		{
+			await ctx.Channel.SendMessageAsync($"Komm endlich {member.Mention} lol {Random.Shared.Next(1200, 9999)}");
+			await Task.Delay(1000);
+		}
+	}
+
+	[Command("countdown")]
+	public async Task CountdownCommand(CommandContext ctx, int minutes)
+	{
+		if (minutes > 60)
+		{
+			await ctx.RespondAsync($"Du brauchst Lord Plus, um einen längeren als 60 Minuten Countdown zu machen!");
+			return;
+		}
+
+		if(minutes < 0)
+			return;
+		
+		DiscordCountdown.Countdown(ctx, minutes);
+	}
+
+	[Command("anwesenheit")]
+	public async Task AttendanceCheckCommand(CommandContext ctx, params DiscordMember[] challengee)
+	{
+		await AttendanceCheckCommand(ctx, "jetzt", challengee);
+	}
+
+	[Command("anwesenheit")]
+	public async Task AttendanceCheckCommand(CommandContext ctx, string timeAsString, params DiscordMember[] challengee)
+	{
+		if (challengee.Length > 25)
+		{ // Mehr als 5 Minuten
+			await ctx.RespondAsync($"Du brauchst Lord Plus, um mehr als 25 Leute herausfordern!");
+			return;
+		}
+
+		var challengee_ids = challengee.Select(x => x.Id).ToArray();
+		ulong[] challengers_ids = Array.Empty<ulong>();
+		DiscordUser[] challengers = Array.Empty<DiscordUser>();
+		DiscordUser[] winners = Array.Empty<DiscordUser>();
+		DiscordUser[] losers = Array.Empty<DiscordUser>();
+
+		#region Emojies
+		var thumbsup = DiscordEmoji.FromName(ctx.Client, ":thumbsup:");
+		var pauseChamp = ctx.Guild.GetEmojiByName("PauseChamp") ?? DiscordEmoji.FromName(ctx.Client, ":see_no_evil:");
+		var weirdChamp = ctx.Guild.GetEmojiByName("weirdChamp") ?? DiscordEmoji.FromName(ctx.Client, ":clown:");
+		var kekwait = ctx.Guild.GetEmojiByName("KEKWait") ?? DiscordEmoji.FromName(ctx.Client, ":open_mouth:");
+		var chad = ctx.Guild.GetEmojiByName("chad") ?? DiscordEmoji.FromName(ctx.Client, ":ok_hand:");
+		var poggers = ctx.Guild.GetEmojiByName("POGGERS") ?? DiscordEmoji.FromName(ctx.Client, ":smiley:");
+		var sadge = ctx.Guild.GetEmojiByName("Sadge") ?? DiscordEmoji.FromName(ctx.Client, ":smiling_face_with_tear:");
+		#endregion
+
+		DiscordMessage? announcement_msg = null;
+
+		timeAsString = timeAsString.ToLower();
+
+		if (timeAsString == "jetzt") 
+		{
+			challengers = challengee;
+			challengers_ids = challengers.Select(x => x.Id)
+										 .ToArray();
+		}
+		else if (Regex.IsMatch(timeAsString, "^[0-2]?[0-9]:[0-5][0-9]$")) 
+		{
+			var time = ((Func<DateTime>)(() =>
+			{
+				var arg_time = timeAsString.Split(":");
+
+				var result = DateTime.Today.AddHours(int.Parse(arg_time[0]))
+										   .AddMinutes(int.Parse(arg_time[1]));
+
+				if (result < DateTime.Now.AddMinutes(9))
+					result = result.AddDays(1);
+
+				return result;
+			}))();
+
+			announcement_msg = await ctx.Channel.SendMessageAsync($"Ihr wurdet zu der LOL-Challenge eingeladen: " +
+				string.Join(", ", challengee.Select(x => x.Mention)) + $" {pauseChamp}...\n\n" +
+				$"Herausforderung ist {Bold($"{(time.Day == DateTime.Today.Day ? "Heute" : "Morgen")} um {time:HH:mm}")} online zu sein.\n\n" +
+				$"{Italic($"Um die Herausforderung anzunehmen, müsst Ihr innerhalb von 5 Minuten auf diese Nachricht mit {thumbsup} reagieren")}");
+
+			await announcement_msg.CreateReactionAsync(thumbsup);
+
+			DiscordCountdown.Countdown(ctx, 5, () =>
+			{
+				challengers = announcement_msg.GetReactionsAsync(thumbsup).Result
+												.Where(x => challengee_ids.Contains(x.Id))
+												.ToArray();
+
+				return challengers.Length == challengee_ids.Length;
+			});
+
+			if (!challengers.Any())
+			{
+				await announcement_msg.RespondAsync("Niemand hat die Herausforderung angeommen...");
+				return;
+			}
+			
+			await announcement_msg.RespondAsync($"Teilnehmende: {string.Join(", ", challengers.Select(x => x.Mention))}\n\n");
+			challengers_ids = challengers.Select(x => x.Id).ToArray();
+
+			Task.Delay(time - DateTime.Now).Wait();
+		}
+		else return;
+
+		DiscordMessage? attendanceCheck_msg;
+
+		if (announcement_msg is null)
+			attendanceCheck_msg = await ctx.Channel.SendMessageAsync($"Anwesenheitscheck {pauseChamp}...\n\n{Italic($"Reagiere auf diese Nachricht mit {chad}!")}");
+		else
+			attendanceCheck_msg = await announcement_msg.RespondAsync($"Anwesenheitscheck {pauseChamp}...\n\n{Italic($"Reagiere auf diese Nachricht mit {chad}!")}");
+		
+		await attendanceCheck_msg.CreateReactionAsync(chad);
+		DiscordCountdown.Countdown(ctx, 5, () =>
+		{
+			winners = attendanceCheck_msg.GetReactionsAsync(chad).Result
+										 .Where(x => challengers_ids.Contains(x.Id))
+										 .ToArray();
+
+			return winners.Length == challengers_ids.Length;
+		});
+
+		losers = challengers.Where(x => !winners.Select(y => y.Id).Contains(x.Id)).ToArray();
+
+		if (winners.Length == 0)
+		{
+			if (announcement_msg is not null)
+				await ctx.RespondAsync($"Ihr seid alles scheiß losers.. \n\nWIE SCHAFFT ES NICHT EINER VON EUCH?!?! {weirdChamp}");
+			else
+				await ctx.RespondAsync($"Echt keiner da? {weirdChamp}");
+		}
+		else if (winners.Length == challengers_ids.Length)
+		{
+			if (announcement_msg is not null)
+				await ctx.RespondAsync($"Ihr habt es echt alle geschafft {kekwait}");
+			else
+				await ctx.RespondAsync($"Alle da {poggers}");
+		}
+		else
+		{
+			if (announcement_msg is not null)
+				await ctx.RespondAsync($"Geschafft: {string.Join(", ", winners.Select(x => x.Mention))}\n" +
+					$"Loser: { string.Join(", ", losers.Select(x => x.Mention))}");
+			else
+				await ctx.RespondAsync($"Nice {poggers}: {string.Join(", ", winners.Select(x => x.Mention))}\n" +
+					$"Wo seid ihr {sadge}: {string.Join(", ", losers.Select(x => x.Mention))}");
+		}
 	}
 }
