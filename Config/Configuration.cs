@@ -1,6 +1,6 @@
 ﻿namespace DSharpBot.Config
 {
-	public class Config
+	public class Configuration
 	{
 		public BotConfig Bot { get; set; }
 	}

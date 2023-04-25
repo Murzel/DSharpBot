@@ -1,4 +1,5 @@
 ﻿using DSharpBot.Commands;
+using DSharpBot.Config;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using System.Text.Json;
@@ -9,27 +10,7 @@ namespace DSharpBot
     {
         public static DateTimeOffset CreatedAt { get; } = DateTimeOffset.Now;
 
-        public static Config.Config Config { get; set; } = ((Func<Config.Config>)(() => {
-            Config.Config res;
-            string configPath = "Config.json";
-            string configJson;
-
-            if (File.Exists(configPath))
-                configJson = File.ReadAllText(configPath);
-            else
-                throw new Exception($"Configuration file \"{configPath}\" in \"{Directory.GetCurrentDirectory()}\" not found!");
-
-            try
-			{
-                res = JsonSerializer.Deserialize<Config.Config>(configJson)  ?? throw new Exception("Failed to process configuration file");
-            }
-            catch (Exception ex)
-			{
-				throw new("Failed to process configuration file");
-            }
-            
-            return res;
-        }))();
+        public static Configuration Config { get; set; } = ConfigFileService.Config;
 
 		static void Main(string[] args)
         {
@@ -49,7 +30,7 @@ namespace DSharpBot
 
 			var commands = discord.UseCommandsNext(new CommandsNextConfiguration()
 			{
-				StringPrefixes = new[] { "!" },
+				StringPrefixes = new[] { Config.Bot.CommandPrefix },
 			});
 
 			commands.RegisterCommands<VoteCommands>();

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DSharpBot.Config
+﻿namespace DSharpBot.Config
 {
 	public class BotConfig
 	{
@@ -12,5 +6,7 @@ namespace DSharpBot.Config
 		public string Mention { get => $"<@{Id}>"; }
 
 		public string Token { get; init; }
+
+		public string CommandPrefix { get; init; } = "!"; 
 	}
 }
