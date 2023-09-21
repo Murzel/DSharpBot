@@ -209,31 +209,35 @@ public class VoteCommands : BaseCommandModule
 		}
 		else if (Regex.IsMatch(timeAsString, "^[0-2]?[0-9]:[0-5][0-9]$")) 
 		{
-			var time = ((Func<DateTime>)(() =>
-			{
+			DateTime time; {
 				var arg_time = timeAsString.Split(":");
 
-				var result = DateTime.Today.AddHours(int.Parse(arg_time[0]))
-										   .AddMinutes(int.Parse(arg_time[1]));
+				time = DateTime.Today
+					.AddHours(int.Parse(arg_time[0]))
+					.AddMinutes(int.Parse(arg_time[1]));
 
-				if (result < DateTime.Now.AddMinutes(9))
-					result = result.AddDays(1);
+				if (time < DateTime.Now.AddMinutes(9))
+					time = time.AddDays(1);
 
-				return result;
-			}))();
+			}
 
-			announcement_msg = await ctx.Channel.SendMessageAsync($"Ihr wurdet zu der LOL-Challenge eingeladen: " +
-				string.Join(", ", challengee.Select(x => x.Mention)) + $" {pauseChamp}...\n\n" +
-				$"Herausforderung ist {Bold($"{(time.Day == DateTime.Today.Day ? "Heute" : "Morgen")} um {time:HH:mm}")} online zu sein.\n\n" +
-				$"{Italic($"Um die Herausforderung anzunehmen, müsst Ihr innerhalb von 5 Minuten auf diese Nachricht mit {thumbsup} reagieren")}");
+			announcement_msg = await ctx.Channel.SendMessageAsync(
+				$$$"""
+				Ihr wurdet zu der Anwesenheits-Herauseingeladen: {{{string.Join(", ", challengee.Select(x => x.Mention))}}} {{{pauseChamp}}}...
+
+				"Herausforderung ist {{{Bold($"{(time.Day == DateTime.Today.Day ? "Heute" : "Morgen")} um {time:HH:mm}")}}} online zu sein.
+
+				{{{Italic($"Um die Herausforderung anzunehmen, müsst Ihr innerhalb von 5 Minuten auf diese Nachricht mit {thumbsup} reagieren")}}}
+				""");
 
 			await announcement_msg.CreateReactionAsync(thumbsup);
-
+			
 			DiscordCountdown.Countdown(ctx, 5, () =>
 			{
-				challengers = announcement_msg.GetReactionsAsync(thumbsup).Result
-												.Where(x => challengee_ids.Contains(x.Id))
-												.ToArray();
+				challengers = announcement_msg
+					.GetReactionsAsync(thumbsup).Result
+					.Where(x => challengee_ids.Contains(x.Id))
+					.ToArray();
 
 				return challengers.Length == challengee_ids.Length;
 			});

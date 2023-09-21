@@ -36,7 +36,9 @@ namespace DSharpBot
 			commands.RegisterCommands<VoteCommands>();
 
 			await discord.ConnectAsync();
-            await Task.Delay(-1);
+            await discord.UpdateStatusAsync(
+                new DSharpPlus.Entities.DiscordActivity("Rainbow Siege 6", DSharpPlus.Entities.ActivityType.Playing)
+            );
         }
     }
 }
