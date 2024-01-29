@@ -2,7 +2,8 @@
 using DSharpBot.Config;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
-using System.Text.Json;
+using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 
 namespace DSharpBot
 {
@@ -16,7 +17,10 @@ namespace DSharpBot
         {
             _ = CreatedAt;
 
-            CreateHost().GetAwaiter().GetResult();
+			Program
+			    .CreateHost()
+                .GetAwaiter()
+                .GetResult();
         }
 
         static async Task CreateHost()
@@ -33,12 +37,32 @@ namespace DSharpBot
 				StringPrefixes = new[] { Config.Bot.CommandPrefix },
 			});
 
+			#region KEKW Smoking
+			discord.MessageReactionAdded += async (sender, args) =>
+            {
+                if( args.Message.Reactions.Where(x => x.Emoji.Name == "🚬").Any())
+                {
+					await args.Message.CreateReactionAsync(DiscordEmoji.FromName(sender, ":smoking:"));
+                }
+
+                await Task.CompletedTask;
+            };
+			#endregion
+
 			commands.RegisterCommands<VoteCommands>();
 
-			await discord.ConnectAsync();
-            await discord.UpdateStatusAsync(
-                new DSharpPlus.Entities.DiscordActivity("Rainbow Siege 6", DSharpPlus.Entities.ActivityType.Playing)
-            );
+            await discord.ConnectAsync();
+
+            discord.Ready += async (client, args) =>
+            {
+				await discord.UpdateStatusAsync(
+                    new DiscordActivity("Rainbow Siege 6", ActivityType.Playing)
+                );
+
+				await Task.CompletedTask;
+			};
+
+            await Task.Delay(-1);
         }
     }
 }
