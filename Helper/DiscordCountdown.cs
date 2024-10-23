@@ -1,4 +1,4 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 using static DSharpPlus.Formatter;
 
@@ -6,19 +6,16 @@ namespace DSharpBot.Helper
 {
 	internal static class DiscordCountdown
 	{
-		const string prefix = "Verbleibende Zeit";
-		const int second = 1000;
-		const int minute = second * 60;
+		const int Second = 1000;
+		const int Minute = Second * 60;
 
-		public static void Countdown(CommandContext ctx, int time, Func<bool>? cancel_event = null)
+		public static async Task<DiscordMessage> Countdown(DiscordMessage msg, int time, Func<int, string> text, Func<bool>? cancel = null)
 		{
-			if (time < 0)
-				time = 0;
+			using var timer = new System.Timers.Timer(Minute);
 
-			var msg = ctx.Channel.SendMessageAsync(time.Text()).Result;
-			var timer = new System.Timers.Timer(minute);
+			cancel ??= (() => false);
 
-			timer.Elapsed += (s, e) =>
+			timer.Elapsed += async (s, e) =>
 			{
 				if (--time < 1)
 				{
@@ -26,36 +23,26 @@ namespace DSharpBot.Helper
 					return;
 				}
 
-				time.Update(msg);
+				msg = await msg.ModifyAsync(text(time));
 			};
 
 			timer.Start();
 
-			Thread.Sleep(second);
+			await Task.Delay(Second);
 
-			while(timer.Enabled)
+			while (timer.Enabled)
 			{
-				if (cancel_event?.Invoke() ?? false)
-					timer.Enabled = false;
+				// Prüfe alle 10 Sekunden, ob die Abbruchbedingung erfüllt worden ist
+				timer.Enabled = !cancel.Invoke();
 
 				for (int i = 0; i < 10; i++)
-					if (timer.Enabled)
-						Thread.Sleep(second);
-					else
-						break;
+					if (timer.Enabled) await Task.Delay(Second);
+					else break;
 			}
 
-			msg.ModifyAsync($"{prefix} {Bold("Vorbei!")}");
+			return msg;
 		}
 
-		private static void Update(this ref int countdown, DiscordMessage msg)
-		{
-			msg.ModifyAsync(countdown.Text()).Wait();
-		}
-
-		private static string Text(this int time)
-		{
-			return $"{prefix} {Bold($"{time} Minute{(time == 1 ? "" : "n")}")}";	
-		}
+		public static string GetText(int time) => $"{Bold($"{time} Minute{(time == 1 ? "" : "n")}")}";
 	}
 }

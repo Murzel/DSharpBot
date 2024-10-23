@@ -1,10 +1,12 @@
 ﻿using DSharpBot.Commands;
 using DSharpBot.Config;
 using DSharpPlus;
-using DSharpPlus.CommandsNext;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.TextCommands;
+using DSharpPlus.Commands.Processors.TextCommands.Parsing;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using System.Reflection;
 
 namespace DSharpBot
 {
@@ -13,6 +15,17 @@ namespace DSharpBot
 		public static DateTimeOffset CreatedAt { get; } = DateTimeOffset.Now;
 
 		public static Configuration Config { get; set; } = ConfigFileService.Config;
+
+		public static DiscordClient Client { get; private set; }
+
+		public static List<(DiscordMessage message, Func<DiscordClient, MessageReactionAddedEventArgs, Task> handler, CancellationToken cancellation)> ReactionEvents { get; } = [];
+
+		public static void OnReactionAdded(this DiscordMessage message, Func<DiscordClient, MessageReactionAddedEventArgs, Task> handler, out CancellationTokenSource cancellation)
+		{
+			cancellation = new CancellationTokenSource();
+
+			ReactionEvents.Add((message, handler, cancellation.Token));
+		}
 
 		static void Main(string[] args)
 		{
@@ -26,70 +39,72 @@ namespace DSharpBot
 
 		static async Task CreateHost()
 		{
-			var discord = new DiscordClient(new DiscordConfiguration()
+			DiscordClientBuilder builder = DiscordClientBuilder.CreateDefault(Config.Bot.Token, DiscordIntents.All);
+
+			builder.UseCommands((IServiceProvider serviceProvider, CommandsExtension extension) =>
 			{
-				Token = Config.Bot.Token,
-				TokenType = TokenType.Bot,
-				Intents = DiscordIntents.All
+				extension.AddCommands([typeof(VoteCommands)]);
+				extension.AddProcessor(new SlashCommandProcessor());
 			});
 
-			var commands = discord.UseCommandsNext(new CommandsNextConfiguration()
+			builder.ConfigureEventHandlers(events =>
 			{
-				StringPrefixes = new[] { Config.Bot.CommandPrefix },
+				#region KEKW Smoking
+				events.HandleMessageReactionAdded(async (sender, args) =>
+				{
+					if (args.Message.Reactions.Where(x => x.Emoji.Name == "🚬").Any())
+					{
+						await args.Message.CreateReactionAsync(DiscordEmoji.FromName(sender, ":smoking:"));
+					}
+
+					ReactionEvents.RemoveAll(x =>
+					{
+                        if (x.cancellation.IsCancellationRequested)
+                        {
+							return true;
+                        }
+						else if(x.message == args.Message)
+						{
+							x.handler.Invoke(sender, args);
+						}
+
+						return false;
+                    });
+				});
+				#endregion
+
+				#region 691
+				Dictionary<DiscordUser, DateTimeOffset> banned = [];
+
+				events.HandleMessageCreated(async (sender, args) =>
+				{
+					if (!args.Author.IsCurrent && args.Channel.Name == "691")
+					{
+						foreach (var ban in banned.Where(x => x.Value < DateTimeOffset.UtcNow))
+						{
+							banned.Remove(ban.Key);
+						}
+
+						if (banned.ContainsKey(args.Author))
+						{
+							await args.Message.DeleteAsync("You are still banned...");
+						}
+						else if (args.Message.Attachments.Count > 0)
+						{
+							int minutes = Random.Shared.Next(1, 59);
+
+							await args.Message.RespondAsync($"For making this post, this user was banned for {minutes} minutes");
+
+							banned.Add(args.Author, DateTimeOffset.UtcNow.AddMinutes(minutes));
+						}
+					}
+				});
+				#endregion
 			});
 
-			#region KEKW Smoking
-			discord.MessageReactionAdded += async (sender, args) =>
-			{
-				if (args.Message.Reactions.Where(x => x.Emoji.Name == "🚬").Any())
-				{
-					await args.Message.CreateReactionAsync(DiscordEmoji.FromName(sender, ":smoking:"));
-				}
+			Client = builder.Build();
 
-				await Task.CompletedTask;
-			};
-			#endregion
-
-			#region 691
-			List<(ulong user, DateTimeOffset until)> banned = new();
-
-			discord.MessageCreated += async (sender, args) =>
-			{
-				if (!args.Author.IsCurrent && args.Channel.Name == "691")
-				{
-					banned.RemoveAll(x => x.until < DateTimeOffset.UtcNow);
-
-					if (banned.Any(x => x.user == args.Author.Id))
-					{
-						await args.Message.DeleteAsync("You are still banned...");
-					}
-					else if (args.Message.Attachments.Count > 0)
-					{
-						int minutes = Random.Shared.Next(1, 59);
-
-						await args.Message.RespondAsync($"For making this post, this user was banned for {minutes} minutes");
-
-						banned.Add((args.Author.Id, DateTimeOffset.UtcNow.AddMinutes(minutes)));
-					}
-				}
-
-				await Task.CompletedTask;
-			};
-			#endregion
-
-			commands.RegisterCommands<VoteCommands>();
-
-			await discord.ConnectAsync();
-
-			discord.Ready += async (client, args) =>
-			{
-				await discord.UpdateStatusAsync(
-					new DiscordActivity("Rainbow Siege 6", ActivityType.Playing)
-				);
-
-				await Task.CompletedTask;
-			};
-
+			await Client.ConnectAsync(new DiscordActivity("Rainbow Six Siege", DiscordActivityType.Playing));
 			await Task.Delay(-1);
 		}
 	}
