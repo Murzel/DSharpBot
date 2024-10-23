@@ -1,19 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="DSharpPlus" Version="4.4.6" />
-		<PackageReference Include="DSharpPlus.CommandsNext" Version="4.4.6" />
-	</ItemGroup>
 
 	<Target Name="PostBuild" AfterTargets="Build">
 		<Message Text="Starting to export configuration file" />
 		<Copy SourceFiles="Config.json" DestinationFolder="$(OutputPath)" ContinueOnError="false" />
 		<Message Text="Configuration file was exported successfully" />
 	</Target>
+
+	<ItemGroup>
+	  <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02389" />
+	  <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02389" />
+	</ItemGroup>
 </Project>

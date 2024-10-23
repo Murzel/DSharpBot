@@ -1,215 +1,76 @@
-﻿using DSharpBot.Helper;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
+﻿using DSharpBot.Config;
+using DSharpBot.Helper;
 using DSharpPlus.Entities;
 using System.Text.RegularExpressions;
+using DSharpPlus.Commands;
+using System.ComponentModel;
 using static DSharpPlus.Formatter;
+using DSharpPlus.Commands.Trees.Metadata;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 
 namespace DSharpBot.Commands;
 
-public class VoteCommands : BaseCommandModule
+public partial class VoteCommands 
 {
-	[Command("ruined")]
-	public async Task RuinedCommand(CommandContext ctx)
+	[Command("ruined"), Description("Berühmtes Zitat")]
+	public static async Task RuinedCommand(CommandContext ctx, [Parameter("Troll"), Description("Der User, der deinen Abend ruiniert hat")] DiscordMember? ruiner = null)
 	{
-		var weirdChamp = ctx.Guild.GetEmojiByName("weirdChamp");
-
-		await ctx.Channel.SendMessageAsync($"\"Du hast mein ganzen Abend ruiniert! Wenn *du* nicht mein Premade wärst, würde ich **dich** reporten {weirdChamp}\" ~Jonas 2021");
-	}
-
-	[Command("ruined"), Description("Do a statement and make clear the fucker ruined your day")]
-	public async Task RuinedCommand(CommandContext ctx, DiscordMember member)
-	{
-		if (member.Id == Program.Config.Bot.Id)
+		if (ruiner?.IsCurrent ?? false)
 		{
-			var kekwait = ctx.Guild.GetEmojiByName("KEKWait");
-			await ctx.Channel.SendMessageAsync($"Unmöglich {kekwait ?? ""}");
+			var kekwait = ctx.Guild!.GetEmojiByName("KEKWait");
+			await ctx.RespondAsync($"Unmöglich {kekwait ?? ""}");
 			return;
 		}
+		
+		await ctx.RespondAsync(
+			$"""
+			{Italic("Du")} hast mein ganzen Abend ruiniert {(ruiner is not null ? Bold(ruiner.Nickname) : "")} {ctx.GetEmojis().PeepoWTF}
 
-		var weirdChamp = ctx.Guild.GetEmojiByName("weirdChamp");
-		var peepoWtf = ctx.Guild.GetEmojiByName("peepoWtf");
-
-		await ctx.Channel.SendMessageAsync($"{Italic("Du")} hast mein ganzen Abend ruiniert {Bold(Sanitize(member.Nickname))} {peepoWtf}\n\nWenn {Italic("du")} nicht mein Premade wärst, würde ich {Bold("dich")} reporten {weirdChamp}");
+			Wenn {Italic("du")} nicht mein Premade wärst, würde ich {Bold("dich")} reporten {ctx.GetEmojis().FeelsWeirdMan} ~Jonas 2021
+			"""
+		);
 	}
 
-	[Command("rr"), Description("Russian Roulette. Test your luck :)")]
-	public async Task RrCommand(CommandContext ctx)
-	{
-		var rand = Random.Shared.Next(1, 100);
-
-		var kekw = ctx.Guild.GetEmojiByName("KEKW");
-		var PauseChamp = ctx.Guild.GetEmojiByName("PauseChamp");
-
-		if (rand < 11)
-			await ctx.RespondAsync($"Du wärst gestorben {kekw}");
-		else
-			await ctx.RespondAsync($"Du hast überlebt {PauseChamp}...");
-	}
-
-	[Command("tuhh"), Description("The truth hurts sometimes...")]
-	public async Task TuhhCommand(CommandContext ctx)
-	{
-		var weirdChamp = ctx.Guild.GetEmojiByName("weirdChamp");
-		await ctx.RespondAsync($"Tuhh ist Schmutz {weirdChamp}");
-	}
-
-	[Command("random"), Description("Get a random item chosen of the list")]
-	[Aliases("rand")]
-	public async Task RandomCommand(CommandContext ctx, params string[] liste)
-	{
-		if (!liste.Any())
-		{
-			var weirdChamp = ctx.Guild.GetEmojiByName("weirdChamp");
-
-			await ctx.RespondAsync($"Du musst schon Elemente angeben, damit ich ein zufälliges davon bestimmen kann {Bold("du")} Pappnase {weirdChamp}");
-			return;
-		}
-
-		for (int i = 0; i < liste.Length; i++)
-		{
-			if (liste[i] == Program.Config.Bot.Mention)
-			{
-				// If the bot is an element, the bot has to be chosen,
-				// because he is in fact the chosen one, so no other can be...
-				liste = new string[] { liste[i] };
-				break;
-			}
-			else if (new Regex(@"^-?[0-9]{1,9}?--?[0-9]{1,9}$").IsMatch(liste[i]))
-			{
-				// If two numbers seperated by a dash, get a random number between those.
-				// A number can have at max 9 digits, so it can be parsed as an integer val.
-				#region logik
-
-				char[] current = liste[i].Take(1).
-					  Concat(liste[i].Skip(1)
-									 .TakeWhile(str => str != '-'))
-					 .ToArray();
-				int leftNumber = int.Parse(current);
-
-				current = liste[i].Skip(current.Length + 1).ToArray();
-
-				int rightNumber = int.Parse(current);
-
-				if (leftNumber < rightNumber)
-				{
-					liste[i] = Random.Shared.Next(leftNumber, rightNumber + 1).ToString();
-				}
-				else
-				{
-					liste[i] = Random.Shared.Next(rightNumber, leftNumber + 1).ToString();
-				}
-
-				#endregion
-			}
-		}
-
-		var pos = new Random().Next(0, liste.Length);
-
-		await ctx.RespondAsync($"Ich wähle {Bold(liste[pos])}");
-	}
-
-	[Command("votekick"), Description("Time outs a member for 5 minutes after a democratic referendum")]
-	public async Task TimeoutCommand(CommandContext ctx, DiscordMember member)
-	{
-		var time = 10; // seconds
-		await ctx.RespondAsync($"User {member.Mention} has been timed out for {time} seconds");
-		await member.TimeoutAsync(DateTimeOffset.Now.AddSeconds(time), "KEKWait");
-	}
-
-	[Command("ping"), Description("Check out how long the bot needs to responds")]
-	public async Task PingCommand(CommandContext ctx)
-	{
-		await ctx.RespondAsync($"Message received and replied at {Bold(DateTimeOffset.Now.ToString())}");
-	}
-
-	[Command("uptime"), Description("Check out how long the bot is running.")]
-	public async Task UptimeCommand(CommandContext ctx)
+	[Command("uptime"), AllowedProcessors<SlashCommandProcessor>(), Description("Check out how long the bot is running")]
+	public static async Task UptimeCommand(CommandContext ctx)
 	{
 		await ctx.RespondAsync($"Since: {Bold(Program.CreatedAt.ToString())}\nUptime: {Bold((DateTimeOffset.Now - Program.CreatedAt).ToFormattedRelativeTime())}");
 	}
 
-	[Command("spam")]
-	public async Task SpamCommand(CommandContext ctx, DiscordMember member)
+	[Command("countdown"), Description("Zählt eine Zeit runter")]
+	public static async Task CountdownCommand(CommandContext ctx, [Parameter("Minuten")] int minutes)
 	{
-		await SpamCommand(ctx, member, 5);
-	}
-
-	[Command("spam")]
-	public async Task SpamCommand(CommandContext ctx, DiscordMember member, int count)
-	{
-		if (count > 10)
+		if (minutes > 15)
 		{
-			await ctx.RespondAsync($"Du brauchst Lord Plus, um mehr als 10 mal zu spammen.");
+			await ctx.RespondAsync($"Du brauchst Lord Plus, um einen längeren als 15 Minuten Countdown zu machen!");
 			return;
 		}
 
-		for (int i = 0; i < count; i++)
-		{
-			await ctx.Channel.SendMessageAsync($"Komm endlich {member.Mention} lol {Random.Shared.Next(1200, 9999)}");
-			await Task.Delay(1000);
-		}
+		if (minutes < 0)
+			return;
+
+		await DiscordCountdown.Countdown(ctx, minutes);
 	}
 
-	[Command("countdown")]
-	public async Task CountdownCommand(CommandContext ctx, int minutes)
+	[Command("anwesenheit"), Description("Prüft, ob jemand da ist")]
+	public static async Task AttendanceCheckCommand(CommandContext ctx, [Parameter("Uhrzeit"), Description("Im Format hh:mm z.B. 6:00")] string timeAsString = "jetzt")
 	{
-		if (minutes > 60)
+		if (timeAsString is null || timeAsString.Equals("jetzt", StringComparison.CurrentCultureIgnoreCase))
 		{
-			await ctx.RespondAsync($"Du brauchst Lord Plus, um einen längeren als 60 Minuten Countdown zu machen!");
+			await ctx.RespondAsync($"Jooo {ctx.GetEmojis().Smoking}..., jemand da?");
+
+			var msg = await ctx.GetResponseAsync();
+
+			await msg!.CreateReactionAsync(ctx.GetEmojis().ThumbsUp);
 			return;
 		}
-
-		if(minutes < 0)
-			return;
-		
-		DiscordCountdown.Countdown(ctx, minutes);
-	}
-
-	[Command("anwesenheit")]
-	public async Task AttendanceCheckCommand(CommandContext ctx, params DiscordMember[] challengee)
-	{
-		await AttendanceCheckCommand(ctx, "jetzt", challengee);
-	}
-
-	[Command("anwesenheit")]
-	public async Task AttendanceCheckCommand(CommandContext ctx, string timeAsString, params DiscordMember[] challengee)
-	{
-		if (challengee.Length > 25)
-		{ // Mehr als 5 Minuten
-			await ctx.RespondAsync($"Du brauchst Lord Plus, um mehr als 25 Leute herausfordern!");
-			return;
-		}
-
-		var challengee_ids = challengee.Select(x => x.Id).ToArray();
-		ulong[] challengers_ids = Array.Empty<ulong>();
-		DiscordUser[] challengers = Array.Empty<DiscordUser>();
-		DiscordUser[] winners = Array.Empty<DiscordUser>();
-		DiscordUser[] losers = Array.Empty<DiscordUser>();
-
-		#region Emojies
-		var thumbsup = DiscordEmoji.FromName(ctx.Client, ":thumbsup:");
-		var pauseChamp = ctx.Guild.GetEmojiByName("PauseChamp") ?? DiscordEmoji.FromName(ctx.Client, ":see_no_evil:");
-		var weirdChamp = ctx.Guild.GetEmojiByName("weirdChamp") ?? DiscordEmoji.FromName(ctx.Client, ":clown:");
-		var kekwait = ctx.Guild.GetEmojiByName("KEKWait") ?? DiscordEmoji.FromName(ctx.Client, ":open_mouth:");
-		var chad = ctx.Guild.GetEmojiByName("chad") ?? DiscordEmoji.FromName(ctx.Client, ":ok_hand:");
-		var poggers = ctx.Guild.GetEmojiByName("POGGERS") ?? DiscordEmoji.FromName(ctx.Client, ":smiley:");
-		var sadge = ctx.Guild.GetEmojiByName("Sadge") ?? DiscordEmoji.FromName(ctx.Client, ":smiling_face_with_tear:");
-		#endregion
-
-		DiscordMessage? announcement_msg = null;
-
-		timeAsString = timeAsString.ToLower();
-
-		if (timeAsString == "jetzt") 
+		else if (TimeRegex().IsMatch(timeAsString))
 		{
-			challengers = challengee;
-			challengers_ids = challengers.Select(x => x.Id)
-										 .ToArray();
-		}
-		else if (Regex.IsMatch(timeAsString, "^[0-2]?[0-9]:[0-5][0-9]$")) 
-		{
-			DateTime time; {
+			const int wait = 5;
+			DiscordMessage msg;
+			DateTime time;
+			{
 				var arg_time = timeAsString.Split(":");
 
 				time = DateTime.Today
@@ -221,81 +82,104 @@ public class VoteCommands : BaseCommandModule
 
 			}
 
-			announcement_msg = await ctx.Channel.SendMessageAsync(
+			await ctx.RespondAsync(
 				$$$"""
-				Ihr wurdet zu der Anwesenheits-Herauseingeladen: {{{string.Join(", ", challengee.Select(x => x.Mention))}}} {{{pauseChamp}}}...
+				Herausforderung ist {{{Bold($"{(time.Day == DateTime.Today.Day ? "Heute" : "Morgen")} um {time:HH:mm}")}}} da zu sein {{{ctx.GetEmojis().PauseChamp}}}
 
-				"Herausforderung ist {{{Bold($"{(time.Day == DateTime.Today.Day ? "Heute" : "Morgen")} um {time:HH:mm}")}}} online zu sein.
-
-				{{{Italic($"Um die Herausforderung anzunehmen, müsst Ihr innerhalb von 5 Minuten auf diese Nachricht mit {thumbsup} reagieren")}}}
+				{{{Italic($"Um die Herausforderung anzunehmen, müsst Ihr innerhalb von {wait} Minuten auf diese Nachricht mit {ctx.GetEmojis().ThumbsUp} reagieren")}}}
 				""");
 
-			await announcement_msg.CreateReactionAsync(thumbsup);
+			msg = (await ctx.GetResponseAsync())!;
 			
-			DiscordCountdown.Countdown(ctx, 5, () =>
-			{
-				challengers = announcement_msg
-					.GetReactionsAsync(thumbsup).Result
-					.Where(x => challengee_ids.Contains(x.Id))
-					.ToArray();
+			await msg.CreateReactionAsync(ctx.GetEmojis().ThumbsUp);
+			await (await DiscordCountdown.Countdown(await ctx.FollowupAsync(DiscordCountdown.GetInitText(wait)), wait))
+				.DeleteAsync();
 
-				return challengers.Length == challengee_ids.Length;
-			});
+			var challengers = msg
+				.GetReactionsAsync(ctx.GetEmojis().ThumbsUp)
+				.ToBlockingEnumerable()
+				.Where(x => x.Id != msg.Author!.Id) // Den TheLord-Bot rausfiltern
+				.ToDictionary(x => x, x => false);
 
-			if (!challengers.Any())
+			if (challengers.Count == 0)
 			{
-				await announcement_msg.RespondAsync("Niemand hat die Herausforderung angeommen...");
+				await ctx.FollowupAsync($"Niemand hat die Herausforderung angeommen... {ctx.GetEmojis().KEKWait}");
 				return;
 			}
+
+			await ctx.FollowupAsync($"Teilnehmende: {string.Join(", ", challengers.Keys.Select(x => x.Mention))} und ich bin auch dabei {ctx.GetEmojis().Smoking}");
+			await Task.Delay(time - DateTime.Now);
 			
-			await announcement_msg.RespondAsync($"Teilnehmende: {string.Join(", ", challengers.Select(x => x.Mention))}\n\n");
-			challengers_ids = challengers.Select(x => x.Id).ToArray();
+			msg = await ctx.FollowupAsync($"Anwesenheitscheck {ctx.GetEmojis().PauseChamp}...\n\n{Italic($"Reagiere auf diese Nachricht mit {ctx.GetEmojis().Chad}!")}");
 
-			Task.Delay(time - DateTime.Now).Wait();
-		}
-		else return;
+			await msg.CreateReactionAsync(ctx.GetEmojis().Chad);
+			IReadOnlyList<DiscordUser> winners = [];
 
-		DiscordMessage? attendanceCheck_msg;
+			await DiscordCountdown.Countdown(ctx, 5, () =>
+			{
+				foreach (DiscordUser reactor in msg.GetReactionsAsync(ctx.GetEmojis().Chad).ToBlockingEnumerable().Intersect(challengers.Keys))
+				{
+					challengers[reactor] = true;
+				}
 
-		if (announcement_msg is null)
-			attendanceCheck_msg = await ctx.Channel.SendMessageAsync($"Anwesenheitscheck {pauseChamp}...\n\n{Italic($"Reagiere auf diese Nachricht mit {chad}!")}");
-		else
-			attendanceCheck_msg = await announcement_msg.RespondAsync($"Anwesenheitscheck {pauseChamp}...\n\n{Italic($"Reagiere auf diese Nachricht mit {chad}!")}");
-		
-		await attendanceCheck_msg.CreateReactionAsync(chad);
-		DiscordCountdown.Countdown(ctx, 5, () =>
-		{
-			winners = attendanceCheck_msg.GetReactionsAsync(chad).Result
-										 .Where(x => challengers_ids.Contains(x.Id))
-										 .ToArray();
+				return challengers.Values.All(x => x);
+			});
 
-			return winners.Length == challengers_ids.Length;
-		});
-
-		losers = challengers.Where(x => !winners.Select(y => y.Id).Contains(x.Id)).ToArray();
-
-		if (winners.Length == 0)
-		{
-			if (announcement_msg is not null)
-				await ctx.RespondAsync($"Ihr seid alles scheiß losers.. \n\nWIE SCHAFFT ES NICHT EINER VON EUCH?!?! {weirdChamp}");
+			if (challengers.Values.All(x => x))
+			{
+				await msg.RespondAsync($"Ihr habt es echt alle geschafft {ctx.GetEmojis().KEKWait}");
+			}
+			else if (challengers.Values.All(x => !x))
+			{  
+				await msg.RespondAsync($"Ihr seid alles scheiß losers.. \n\nWIE SCHAFFT ES NICHT EINER VON EUCH?!?! {ctx.GetEmojis().Madge}");
+			}
 			else
-				await ctx.RespondAsync($"Echt keiner da? {weirdChamp}");
-		}
-		else if (winners.Length == challengers_ids.Length)
-		{
-			if (announcement_msg is not null)
-				await ctx.RespondAsync($"Ihr habt es echt alle geschafft {kekwait}");
-			else
-				await ctx.RespondAsync($"Alle da {poggers}");
+			{  
+				await msg.RespondAsync(
+					$"Geschafft: {string.Join(", ", challengers.Where(x => x.Value).Select(x => x.Key.Mention))} und natürlich ich selbst lol {ctx.GetEmojis().Smoking}\n" +
+					$"Loser: {string.Join(", ", challengers.Where(x => !x.Value).Select(x => x.Key.Mention))}");	
+			}
 		}
 		else
 		{
-			if (announcement_msg is not null)
-				await ctx.RespondAsync($"Geschafft: {string.Join(", ", winners.Select(x => x.Mention))}\n" +
-					$"Loser: { string.Join(", ", losers.Select(x => x.Mention))}");
-			else
-				await ctx.RespondAsync($"Nice {poggers}: {string.Join(", ", winners.Select(x => x.Mention))}\n" +
-					$"Wo seid ihr {sadge}: {string.Join(", ", losers.Select(x => x.Mention))}");
-		}
+			await ctx.RespondAsync($"Was willst du eig. von mir... dafaq {ctx.GetEmojis().Madge}");
+			return;
+		};
 	}
+
+	[GeneratedRegex("^[0-2]?[0-9]:[0-5][0-9]$")]
+	private static partial Regex TimeRegex();
+}
+
+public static class EmojisExtensions
+{
+	public static Emojis GetEmojis(this CommandContext ctx) => new()
+	{
+		CTX = ctx
+	};
+}
+
+public class Emojis
+{
+	public required CommandContext CTX { get; init; }
+
+	public DiscordEmoji ThumbsUp => DiscordEmoji.FromName(CTX.Client, ":thumbsup:");
+
+	public DiscordEmoji Smoking => DiscordEmoji.FromName(CTX.Client, ":smoking:");
+
+	public DiscordEmoji PauseChamp => CTX.Guild!.GetEmojiByName("PauseChamp") ?? DiscordEmoji.FromName(CTX.Client, ":see_no_evil:");
+
+	public DiscordEmoji FeelsWeirdMan => CTX.Guild!.GetEmojiByName("FeelsWeirdMan") ?? DiscordEmoji.FromName(CTX.Client, ":clown:");
+
+	public DiscordEmoji KEKWait => CTX.Guild!.GetEmojiByName("KEKWait") ?? DiscordEmoji.FromName(CTX.Client, ":open_mouth:");
+
+	public DiscordEmoji Chad => CTX.Guild!.GetEmojiByName("chad") ?? DiscordEmoji.FromName(CTX.Client, ":ok_hand:");
+
+	public DiscordEmoji Poggers => CTX.Guild!.GetEmojiByName("POGGERS") ?? DiscordEmoji.FromName(CTX.Client, ":smiley:");
+
+	public DiscordEmoji Sadge => CTX.Guild!.GetEmojiByName("Sadge") ?? DiscordEmoji.FromName(CTX.Client, ":smiling_face_with_tear:");
+
+	public DiscordEmoji Madge => CTX.Guild!.GetEmojiByName("Madge") ?? DiscordEmoji.FromName(CTX.Client, ":angry:");
+
+	public DiscordEmoji PeepoWTF => CTX.Guild!.GetEmojiByName("peepoWtf") ?? DiscordEmoji.FromName(CTX.Client, ":rage:");
 }

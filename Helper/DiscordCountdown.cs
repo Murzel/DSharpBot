@@ -1,4 +1,4 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 using static DSharpPlus.Formatter;
 
@@ -6,16 +6,12 @@ namespace DSharpBot.Helper
 {
 	internal static class DiscordCountdown
 	{
-		const string prefix = "Verbleibende Zeit";
+		const string prefix = "Verbleibende Zeit:";
 		const int second = 1000;
 		const int minute = second * 60;
 
-		public static void Countdown(CommandContext ctx, int time, Func<bool>? cancel_event = null)
+		public static async Task<DiscordMessage> Countdown(DiscordMessage msg, int time, Func<bool>? e = null)
 		{
-			if (time < 0)
-				time = 0;
-
-			var msg = ctx.Channel.SendMessageAsync(time.Text()).Result;
 			var timer = new System.Timers.Timer(minute);
 
 			timer.Elapsed += (s, e) =>
@@ -31,22 +27,35 @@ namespace DSharpBot.Helper
 
 			timer.Start();
 
-			Thread.Sleep(second);
+			await Task.Delay(second);
 
-			while(timer.Enabled)
+			while (timer.Enabled)
 			{
-				if (cancel_event?.Invoke() ?? false)
+				if (e?.Invoke() ?? false)
 					timer.Enabled = false;
 
 				for (int i = 0; i < 10; i++)
 					if (timer.Enabled)
-						Thread.Sleep(second);
+						await Task.Delay(second);
 					else
 						break;
 			}
 
-			msg.ModifyAsync($"{prefix} {Bold("Vorbei!")}");
+			e?.Invoke();
+			await msg.ModifyAsync($"{prefix} {Bold("Vorbei!")}");
+
+			return msg;
 		}
+
+		public static async Task<DiscordMessage> Countdown(CommandContext ctx, int time, Func<bool>? e = null)
+		{
+			await ctx.RespondAsync(time.Text());
+			var msg = await ctx.GetResponseAsync();
+
+			return await Countdown(msg!, time, e);
+		}
+
+		public static string GetInitText(int time) => time.Text();
 
 		private static void Update(this ref int countdown, DiscordMessage msg)
 		{

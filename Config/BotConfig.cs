@@ -1,4 +1,6 @@
-﻿namespace DSharpBot.Config
+﻿using DSharpPlus.Entities;
+
+namespace DSharpBot.Config
 {
 	public class BotConfig
 	{
@@ -6,7 +8,5 @@
 		public string Mention { get => $"<@{Id}>"; }
 
 		public string Token { get; init; }
-
-		public string CommandPrefix { get; init; } = "!"; 
 	}
 }
