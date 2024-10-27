@@ -13,7 +13,7 @@
 	</Target>
 
 	<ItemGroup>
-	  <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02389" />
-	  <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02389" />
+	  <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02397" />
+	  <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02397" />
 	</ItemGroup>
 </Project>

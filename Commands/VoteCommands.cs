@@ -109,7 +109,7 @@ public partial class VoteCommands
 				$$$"""
 				Herausforderung ist {{{Bold($"{(time.Day == DateTime.Today.Day ? "Heute" : "Morgen")} um {time:HH:mm}")}}} da zu sein {{{ctx.GetEmojis().PauseChamp}}}
 
-				{{{Italic($"Um die Herausforderung anzunehmen, müsst Ihr innerhalb von {wait} Minuten auf diese Nachricht mit {ctx.GetEmojis().ThumbsUp} reagieren")}}}
+				{{{Italic($"Um die Herausforderung anzunehmen, müsst Ihr auf diese Nachricht mit {ctx.GetEmojis().ThumbsUp} reagieren")}}}
 				""");
 
 			msg = (await ctx.GetResponseAsync())!;
@@ -119,14 +119,18 @@ public partial class VoteCommands
 			{
 				if (msg.Author == e.User) return; // Der Bot selbst soll nicht mit aufgenommen werden
 				if (challengers.ContainsKey(e.User)) return; // Ist bereits in der Challange
-				if (!challengers.TryAdd(e.User, false)) return; // keine Ahnung lol
 
-				await ctx.FollowupAsync($"{e.User.Mention} ist dabei!");	
+				if(challengers.TryAdd(e.User, false))
+				{
+					await Program.Client.ReconnectAsync();
+					await msg.RespondAsync($"{e.User.Mention} ist dabei!");
+				}				
 			}, out var token);
 			await msg.CreateReactionAsync(ctx.GetEmojis().ThumbsUp);
 			
 			// Bis zum Zeitpunkt abwarten...
 			await Task.Delay(time - DateTime.Now);
+			await Program.Client.ReconnectAsync();
 
 			// Teilnahme beenden
 			token.Cancel();
@@ -146,7 +150,6 @@ public partial class VoteCommands
 				// Warte 5 Minuten 
 				string text(int time) => $"""
 					Anwesenheitscheck {ctx.GetEmojis().PauseChamp}...
-					Warteraum: 
 
 					Verbleibende Zeit: {DiscordCountdown.GetText(time)}
 					""";
