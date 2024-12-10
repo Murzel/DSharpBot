@@ -84,11 +84,12 @@ namespace DSharpBot
 						foreach (var ban in banned.Where(x => x.Value < DateTimeOffset.UtcNow))
 						{
 							banned.Remove(ban.Key);
+							await ban.Key.SendMessageAsync("You're now unbanned from 691 and can submit stupid posts again 🚬").ConfigureAwait(false);
 						}
 
 						if (banned.ContainsKey(args.Author))
 						{
-							await args.Message.DeleteAsync("You are still banned...");
+							await args.Message.DeleteAsync("User is still banned...").ConfigureAwait(false);
 						}
 						else if (args.Message
 							is { Attachments.Count: > 0 }
@@ -97,7 +98,7 @@ namespace DSharpBot
 									{ Message.Attachments.Count: > 0} 
 								or	{ Message.Embeds.Count: > 0 }]})
 						{
-							int days = Random.Shared.Next(1, 31);
+							int days = Random.Shared.Next(1, 8);
 
 							await args.Message.RespondAsync($"For making this post, this user was banned for {days} days");
 
