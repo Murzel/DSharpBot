@@ -122,7 +122,6 @@ public partial class VoteCommands
 
 				if(challengers.TryAdd(e.User, false))
 				{
-					await Program.Client.ReconnectAsync();
 					await msg.RespondAsync($"{e.User.Mention} ist dabei!");
 				}				
 			}, out var token);
@@ -130,14 +129,14 @@ public partial class VoteCommands
 			
 			// Bis zum Zeitpunkt abwarten...
 			await Task.Delay(time - DateTime.Now);
-			await Program.Client.ReconnectAsync();
 
 			// Teilnahme beenden
 			token.Cancel();
 
-			if (challengers.Count == 0)
+			if(challengers.Count < 2)	
 			{
 				// Wenn es keine Teilnehmer gibt...
+				// Oder nur einen einzigen...
 				// Einfach so tun, als ob nix wäre 
 				return;
 			}

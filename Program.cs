@@ -1,12 +1,13 @@
 ﻿using DSharpBot.Commands;
 using DSharpBot.Config;
+using DSharpBot.Helper;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
-using DSharpPlus.Commands.Processors.TextCommands;
-using DSharpPlus.Commands.Processors.TextCommands.Parsing;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using System.Net.Mail;
+using System.Threading.Channels;
 
 namespace DSharpBot
 {
@@ -59,17 +60,17 @@ namespace DSharpBot
 
 					ReactionEvents.RemoveAll(x =>
 					{
-                        if (x.cancellation.IsCancellationRequested)
-                        {
+						if (x.cancellation.IsCancellationRequested)
+						{
 							return true;
-                        }
-						else if(x.message == args.Message)
+						}
+						else if (x.message == args.Message)
 						{
 							x.handler.Invoke(sender, args);
 						}
 
 						return false;
-                    });
+					});
 				});
 				#endregion
 
@@ -78,7 +79,7 @@ namespace DSharpBot
 
 				events.HandleMessageCreated(async (sender, args) =>
 				{
-					if (!args.Author.IsCurrent && args.Channel.Name == "691")
+					if (args is { Author.IsCurrent: false, Channel.Name: "691" })
 					{
 						foreach (var ban in banned.Where(x => x.Value < DateTimeOffset.UtcNow))
 						{
@@ -89,13 +90,15 @@ namespace DSharpBot
 						{
 							await args.Message.DeleteAsync("You are still banned...");
 						}
-						else if (args.Message.Attachments.Count > 0)
+						else if (args.Message
+							is { Attachments.Count: > 0 }
+							or { MessageSnapshots: [.., { Message.Attachments.Count: > 0 }] })
 						{
-							int minutes = Random.Shared.Next(1, 59);
+							int days = Random.Shared.Next(1, 31);
 
-							await args.Message.RespondAsync($"For making this post, this user was banned for {minutes} minutes");
+							await args.Message.RespondAsync($"For making this post, this user was banned for {days} days");
 
-							banned.Add(args.Author, DateTimeOffset.UtcNow.AddMinutes(minutes));
+							banned.Add(args.Author, DateTimeOffset.UtcNow.AddDays(days));
 						}
 					}
 				});
@@ -103,8 +106,12 @@ namespace DSharpBot
 			});
 
 			Client = builder.Build();
-
+#if DEBUG
+			await Client.ConnectAsync(new DiscordActivity("DEBUG MODE"));
+#else
 			await Client.ConnectAsync(new DiscordActivity("Rainbow Six Siege", DiscordActivityType.Playing));
+#endif
+
 			await Task.Delay(-1);
 		}
 	}
