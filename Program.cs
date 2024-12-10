@@ -92,7 +92,10 @@ namespace DSharpBot
 						}
 						else if (args.Message
 							is { Attachments.Count: > 0 }
-							or { MessageSnapshots: [.., { Message.Attachments.Count: > 0 }] })
+							or { Embeds.Count: > 0 }
+							or { MessageSnapshots: [.., 
+									{ Message.Attachments.Count: > 0} 
+								or	{ Message.Embeds.Count: > 0 }]})
 						{
 							int days = Random.Shared.Next(1, 31);
 
