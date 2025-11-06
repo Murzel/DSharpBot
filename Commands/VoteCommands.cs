@@ -1,12 +1,9 @@
-﻿using DSharpBot.Config;
-using DSharpBot.Helper;
+﻿using DSharpBot.Helper;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
-using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Commands.Trees.Metadata;
 using DSharpPlus.Entities;
 using System.ComponentModel;
-using System.Linq;
 using System.Text.RegularExpressions;
 using static DSharpPlus.Formatter;
 
