@@ -1,13 +1,14 @@
 ﻿using DSharpBot.Config;
 using DSharpBot.Helper;
-using DSharpPlus.Entities;
-using System.Text.RegularExpressions;
 using DSharpPlus.Commands;
-using System.ComponentModel;
-using static DSharpPlus.Formatter;
-using DSharpPlus.Commands.Trees.Metadata;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
+using DSharpPlus.Commands.Trees.Metadata;
+using DSharpPlus.Entities;
+using System.ComponentModel;
+using System.Linq;
+using System.Text.RegularExpressions;
+using static DSharpPlus.Formatter;
 
 namespace DSharpBot.Commands;
 
@@ -32,8 +33,18 @@ public partial class VoteCommands
 
 	[Command("uptime"), AllowedProcessors<SlashCommandProcessor>(), Description("Check out how long the bot is running")]
 	public static async Task UptimeCommand(CommandContext ctx)
+		=> await ctx.RespondAsync($"Since: {Bold(Program.CreatedAt.ToString())}\nUptime: {Bold((DateTimeOffset.Now - Program.CreatedAt).ToFormattedRelativeTime())}");
+	
+	[Command("banned691"), AllowedProcessors<SlashCommandProcessor>(), Description("Check out banned people from 691")]
+	public static async Task Banned691(CommandContext ctx)
 	{
-		await ctx.RespondAsync($"Since: {Bold(Program.CreatedAt.ToString())}\nUptime: {Bold((DateTimeOffset.Now - Program.CreatedAt).ToFormattedRelativeTime())}");
+		var banned = Program.Banned691
+			.Select(x => $"{Bold(x.Value.LocalDateTime.ToString("dd.MM.yyyy HH:mm"))} {x.Key.Username}")
+			.ToList();
+
+		if (banned.Count is 0) 
+			await ctx.RespondAsync("Nobody is currently banned...");
+		else await ctx.RespondAsync(string.Join('\n', banned));
 	}
 
 	[Command("countdown"), Description("Zählt eine Zeit runter")]
