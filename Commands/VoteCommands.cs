@@ -1,4 +1,5 @@
 ﻿using DSharpBot.Helper;
+using DSharpBot.NoClient;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Trees.Metadata;
@@ -11,6 +12,12 @@ namespace DSharpBot.Commands;
 
 public partial class VoteCommands 
 {
+	[Command("no"), Description("prints the reason from no as a service: https://naas.isalman.dev/no")]
+	public static async Task No(CommandContext ctx)
+		=> await ctx.RespondAsync(
+			await NoService.GetNoReasonAsync()
+		);
+
 	[Command("ruined"), Description("Berühmtes Zitat")]
 	public static async Task RuinedCommand(CommandContext ctx, [Parameter("Troll"), Description("Der User, der deinen Abend ruiniert hat")] DiscordMember? ruiner = null)
 	{
