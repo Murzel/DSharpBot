@@ -29,7 +29,7 @@ internal static class R691Handler
 
 	public const string TargetChannelName =
 #if !DEBUG
-		"691"
+		"691";
 #else
 		"terminal";
 #endif
@@ -104,7 +104,7 @@ internal static class R691Handler
 			return false;
 
 #if !DEBUG
-		until = DateTimeOffset.UtcNow.AddDays(time);
+		until = DateTime.UtcNow.AddDays(time);
 		timeWithUnit = $"{time} day";
 #else
 		until = DateTime.UtcNow.AddSeconds(time);

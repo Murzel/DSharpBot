@@ -2,6 +2,6 @@
 {
 	public class Configuration
 	{
-		public BotConfig Bot { get; set; }
+		public BotConfig Bot { get; set; } = null!;
 	}
 }

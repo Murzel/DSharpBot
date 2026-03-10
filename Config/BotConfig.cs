@@ -7,6 +7,6 @@ namespace DSharpBot.Config
 		public ulong Id { get; init; }
 		public string Mention { get => $"<@{Id}>"; }
 
-		public string Token { get; init; }
+		public string Token { get; init; } = null!;
 	}
 }
