@@ -1,10 +1,12 @@
 ﻿using DSharpBot.Helper;
 using DSharpBot.NoClient;
+using DSharpBot.R691;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Trees.Metadata;
 using DSharpPlus.Entities;
 using System.ComponentModel;
+using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
 using static DSharpPlus.Formatter;
 
@@ -42,11 +44,35 @@ public partial class VoteCommands
 	[Command("banned691"), AllowedProcessors<SlashCommandProcessor>(), Description("Check out banned people from 691")]
 	public static async Task Banned691(CommandContext ctx)
 	{
-		var banned = Program.Banned691
-			.Select(x => $"{Bold(x.Value.LocalDateTime.ToString("dd.MM.yyyy HH:mm"))} {x.Key.Username}")
-			.ToList();
+		if (ctx.Guild is null)
+		{
+			await ctx.RespondAsync("This command can only be used in a guild!");
+			return;
+		}
 
-		if (banned.Count is 0) 
+		using var dbContext = R691Handler.GetDbContext();
+
+		var banned = dbContext.Banned
+			.OrderBy(x => x.Until)
+			.ToArray()
+			.Select(x => {
+				string name;
+
+				if (ctx.Guild.Members.TryGetValue(x.Id, out var member))
+				{
+					name = member.DisplayName;
+				}
+				else
+				{   
+					// Wenn der User nicht mehr auf dem Server ist, kann der Name nicht mehr geholt werden
+					name = Italic("abandoned user (not on server anymore)");
+				}
+
+				return $"{Bold(x.Until.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))} {name}";
+			})
+			.ToArray();
+
+		if (banned.Length is 0) 
 			await ctx.RespondAsync("Nobody is currently banned...");
 		else await ctx.RespondAsync(string.Join('\n', banned));
 	}
