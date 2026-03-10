@@ -34,38 +34,44 @@ internal static class R691Handler
 		"terminal";
 #endif
 
+	private async static Task<bool> EvaluateBan(this DiscordMessage message, R691Context dbContext)
+	{
+		if (!message.ContainsMedia())
+			return false;
+
+		if (await message.Author!.IsBanned(dbContext))
+		{
+			await message.DeleteAsync("User is still banned...").ConfigureAwait(false);
+		}
+		else
+		{
+			await message.BanAuthor(dbContext);
+		}
+
+		return true;
+	}
+
 	public async static Task OnMessageCreated(DiscordClient sender, MessageCreatedEventArgs args)
 	{
 		using var dbContext = GetDbContext();
 
 		if (args is { Author.IsCurrent: false, Channel.Name: TargetChannelName })
 		{
-			if (await args.Author.IsBanned(dbContext))
-			{
-				await args.Message.DeleteAsync("User is still banned...").ConfigureAwait(false);
+			DiscordMessage msg = args.Message;
+
+			if (await msg.EvaluateBan(dbContext))
 				return;
-			}
 
-			if (args.Message.ContainsMedia())
+			// Bei einem Link wird die Vorschau von Discord nicht direkt geladen
+			// Daher wird hier nochmal die Nachricht verzögert geprüft
+			for (int i = 0; i < 4; i++)
 			{
-				await args.Message.BanAuthor(dbContext);
-			}
-			else
-			{
-				// Bei einem Link wird die Vorschau von Discord nicht direkt geladen
-				// Daher wird hier nochmal die Nachricht verzögert geprüft
-				for (int i = 0; i < 3; i++)
-				{
-					await Task.Delay(1_000 * i);
+				await Task.Delay(1_000);
 
-					var reload_msg = await args.Message.Channel!.GetMessageAsync(args.Message.Id);
+				msg = await msg.Channel!.GetMessageAsync(args.Message.Id);
 
-					if (reload_msg.ContainsMedia())
-					{
-						await reload_msg.BanAuthor(dbContext);
-						break;
-					}
-				}
+				if (await msg.EvaluateBan(dbContext))
+					return;
 			}
 		}
 	}
