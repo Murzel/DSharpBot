@@ -55,7 +55,7 @@ public static class Program
 			#region KEKW Smoking
 			events.HandleMessageReactionAdded(async (sender, args) =>
 			{
-				if (args.Message.Reactions.Where(x => x.Emoji.Name == "🚬").Any())
+				if (args.Message.Reactions.Any(x => x.Emoji.Name == "🚬"))
 				{
 					await args.Message.CreateReactionAsync(DiscordEmoji.FromName(sender, ":smoking:"));
 				}
