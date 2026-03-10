@@ -80,7 +80,7 @@ internal static class R691Handler
 
 	private static bool ContainsMedia(this DiscordMessage msg) => msg
 		is { Attachments.Count: > 0 }
-		or { Embeds.Count: > 0 }
+		or { Embeds: [.., { Type: "image" }] }
 		or
 		{
 			MessageSnapshots: [..,
