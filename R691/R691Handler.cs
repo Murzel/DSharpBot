@@ -96,7 +96,6 @@ internal static class R691Handler
 
 	private static async Task<bool> BanAuthor(this DiscordMessage msg, R691Context dbContext)
 	{
-		var time = Random.Shared.Next(1, 8);
 		DateTime until;
 		string timeWithUnit;
 
@@ -104,17 +103,37 @@ internal static class R691Handler
 			return false;
 
 #if !DEBUG
-		until = DateTime.UtcNow.AddDays(time);
-		timeWithUnit = $"{time} day";
-#else
-		until = DateTime.UtcNow.AddSeconds(time);
-		timeWithUnit = $"{time} second";
-#endif
+		var hours = Random.Shared.Next(12, 7 /* days */ * 24 + 1);
+		var days = hours / 24;
 
-		if (time > 1)
+		hours %= 24;
+
+		until = DateTime.UtcNow.AddHours(hours);
+
+		timeWithUnit = days switch
 		{
-			timeWithUnit += "s";
+			0 => "",
+			1 => "1 day",
+			_ => $"{days} days"
+		};
+
+		if (timeWithUnit != string.Empty && hours > 0)
+		{
+			timeWithUnit += " and ";
 		}
+
+		timeWithUnit += hours switch
+		{
+			0 => "",
+			1 => $"1 hour",
+			_ => $"{hours} hours"
+		};
+#else
+		var seconds = 10;
+
+		until = DateTime.UtcNow.AddSeconds(seconds);
+		timeWithUnit = $"{seconds} seconds";
+#endif
 
 		await dbContext.Banned.AddAsync(new()
 		{
